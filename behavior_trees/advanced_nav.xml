@@ -1,0 +1,59 @@
+<root main_tree_to_execute="MainTree">
+
+	<BehaviorTree ID="MainTree">
+
+		<RecoveryNode number_of_retries="5" name="AutonomousNavigation">
+
+			<!-- ===== TASK EXECUTION PIPELINE ===== -->
+			<PipelineSequence name="NavigateAndMonitor">
+
+				<!-- Replan globally at 1 Hz -->
+				<RateController hz="1.0">
+					<RecoveryNode number_of_retries="1" name="PlanPath">
+						<ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+						<ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+					</RecoveryNode>
+				</RateController>
+
+				<!-- Execute path -->
+				<RecoveryNode number_of_retries="1" name="ExecutePath">
+					<FollowPath path="{path}" controller_id="FollowPath"/>
+					<ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+				</RecoveryNode>
+
+				<!-- Task-level wait (stabilization / sensing) -->
+				<Wait wait_duration="2.0"/>
+
+			</PipelineSequence>
+
+			<!-- ===== FAILURE HANDLING ===== -->
+			<ReactiveFallback name="FailureHandling">
+
+				<!-- Skip recovery if goal changed -->
+				<GoalUpdated/>
+
+				<RoundRobin name="RecoveryBehaviors">
+
+					<!-- Soft recovery -->
+					<Sequence>
+						<ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+						<ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+					</Sequence>
+
+					<!-- Medium recovery -->
+					<Spin spin_dist="1.57"/>
+
+					<!-- Pause -->
+					<Wait wait_duration="5.0"/>
+
+					<!-- Hard recovery -->
+					<BackUp backup_dist="0.30" backup_speed="0.05"/>
+
+				</RoundRobin>
+
+			</ReactiveFallback>
+
+		</RecoveryNode>
+
+	</BehaviorTree>
+</root>
