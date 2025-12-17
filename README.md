@@ -8,7 +8,7 @@ This package contains my custom Nav2 Behavior Tree setup for stable autonomous n
 
 \## Demo
 
-🖼 Screenshot: `screenshots/nav2\_rviz\_demo.png`  
+🖼 Screenshot: `screenshot`  
 
 🎥 Video: (add link here)
 
